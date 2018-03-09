@@ -59,7 +59,8 @@ namespace CheckerUnitTestProject
         {
             Checker checker = new Checker(new Uri("https://example.com/"), @"D:\ArchiveLog.txt");
             checker.GetAndSavePage();
-            var answer = checker.Check();
+            Checker checker2 = new Checker(new Uri("https://example.com/"), @"D:\ArchiveLog.txt");
+            var answer = checker2.Check();
             Assert.AreEqual(expected: 1.0, actual: answer);
         }
 

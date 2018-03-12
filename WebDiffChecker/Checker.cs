@@ -3,8 +3,8 @@ using AngleSharp.Parser.Html;
 using F23.StringSimilarity;
 using System;
 using System.IO;
-using System.Net;
-using System.Text;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace WebDiff
 {
@@ -12,7 +12,7 @@ namespace WebDiff
     {
         private static Uri SiteUri;
         private static string LocalPath;
-        private static WebClient webClient;
+        private static HttpClient httpClient = new HttpClient();
 
         /// <summary>
         /// Webページの内容を差分し一致率を調べます。
@@ -26,27 +26,24 @@ namespace WebDiff
 
             SiteUri = siteUrl;
             LocalPath = localPath;
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 Edge/16.16299");
         }
-        
+
         /// <summary>
         /// Webページへアクセスしローカルアーカイブを作成します。
         /// </summary>
-        public void GetAndSavePage()
+        public async Task GetAndSavePageAsync()
         {
-            SaveArchive(GetWebPage());
+            await SaveArchiveAsync(await GetWebPageAsync());
         }
 
         /// <summary>
         /// Webページへアクセスします。
         /// </summary>
         /// <returns>ローカルアーカイブのデータ</returns>
-        private string GetWebPage()
+        private async Task<string> GetWebPageAsync()
         {
-            using (webClient = new WebClient())
-            {
-                webClient.Encoding = Encoding.UTF8;
-                return ParseBody(webClient.DownloadString(SiteUri));
-            }
+            return ParseBody(await httpClient.GetStringAsync(SiteUri));
         }
 
         /// <summary>
@@ -64,12 +61,12 @@ namespace WebDiff
         /// <summary>
         /// Webページのローカルアーカイブを作成します。
         /// </summary>
-        private void SaveArchive(string body)
+        private async Task SaveArchiveAsync(string body)
         {
             checkArchiveDefinition();
             using (StreamWriter writer = new StreamWriter(LocalPath))
             {
-                writer.Write(body);
+                await writer.WriteAsync(body);
             }
         }
 
@@ -77,10 +74,10 @@ namespace WebDiff
         /// Webページの一致率を調べます。
         /// </summary>
         /// <returns>一致率(%)</returns>
-        public double Check()
+        public async Task<double> CheckAsync()
         {
-            string archive = ReadArchive();
-            string webpage = GetWebPage();
+            string archive = await ReadArchiveAsync();
+            string webpage = await GetWebPageAsync();
             JaroWinkler jaroWinkler = new JaroWinkler();
 
             return jaroWinkler.Similarity(archive, webpage);
@@ -90,12 +87,12 @@ namespace WebDiff
         /// ローカルアーカイブを取得します。
         /// </summary>
         /// <returns>ローカルアーカイブのデータ</returns>
-        private string ReadArchive()
+        private async Task<string> ReadArchiveAsync()
         {
             checkArchiveDefinition();
             using (StreamReader streamReader = new StreamReader(LocalPath))
             {
-                return streamReader.ReadToEnd();
+                return await streamReader.ReadToEndAsync();
             }
         }
 

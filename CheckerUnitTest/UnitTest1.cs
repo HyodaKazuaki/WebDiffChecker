@@ -1,7 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Net;
+using System.Threading.Tasks;
 using WebDiff;
+using System.Net.Http;
 
 namespace CheckerUnitTestProject
 {
@@ -9,13 +10,13 @@ namespace CheckerUnitTestProject
     public class UnitTest1
     {
         [TestMethod]
-        public void LocalArchiveNotDefinition()
+        public async Task LocalArchiveNotDefinitionAsync()
         {
             var answer = false;
             Checker checker = new Checker(new Uri("https://example.com/"));
             try
             {
-                checker.Check();
+                await checker.CheckAsync();
             }catch(NullReferenceException)
             {
                 answer = true;
@@ -24,15 +25,15 @@ namespace CheckerUnitTestProject
         }
 
         [TestMethod]
-        public void ServerNotFound()
+        public async Task ServerNotFoundAsync()
         {
             var answer = false;
             Checker checker = new Checker(new Uri("http://example.jp/"), @"D:\ArchiveLog.txt");
             try
             {
-                checker.GetAndSavePage();
+                await checker.GetAndSavePageAsync();
             }
-            catch (WebException)
+            catch (HttpRequestException)
             {
                 answer = true;
             }
@@ -40,13 +41,13 @@ namespace CheckerUnitTestProject
         }
 
         [TestMethod]
-        public void ArchiveSave()
+        public async Task ArchiveSaveAsync()
         {
             var answer = true;
             Checker checker = new Checker(new Uri("https://example.com/"), @"D:\ArchiveLog.txt");
             try
             {
-                checker.GetAndSavePage();
+                await checker.GetAndSavePageAsync();
             }catch(Exception)
             {
                 answer = false;
@@ -55,22 +56,22 @@ namespace CheckerUnitTestProject
         }
 
         [TestMethod]
-        public void ArchiveCheck()
+        public async Task ArchiveCheckAsync()
         {
             Checker checker = new Checker(new Uri("https://example.com/"), @"D:\ArchiveLog.txt");
-            checker.GetAndSavePage();
+            await checker.GetAndSavePageAsync();
             Checker checker2 = new Checker(new Uri("https://example.com/"), @"D:\ArchiveLog.txt");
-            var answer = checker2.Check();
+            var answer = await checker2.CheckAsync();
             Assert.AreEqual(expected: 1.0, actual: answer);
         }
 
         [TestMethod]
-        public void ArchiveCannotCheck()
+        public async Task ArchiveCannotCheckAsync()
         {
             Checker checker = new Checker(new Uri("https://example.com/"), @"D:\ArchiveLog.txt");
-            checker.GetAndSavePage();
+            await checker.GetAndSavePageAsync();
             Checker checker2 = new Checker(new Uri("https://www.google.com/"), @"D:\ArchiveLog.txt");
-            var answer = checker2.Check();
+            var answer = await checker2.CheckAsync();
             Assert.AreNotEqual(notExpected: 1.0, actual: answer);
         }
 
